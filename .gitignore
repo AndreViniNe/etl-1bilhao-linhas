@@ -75,6 +75,8 @@ instance/
 # Sphinx documentation
 docs/_build/
 
+data/measurements.txt
+
 # PyBuilder
 .pybuilder/
 target/
