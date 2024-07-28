@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.12"
 pandas = "^2.2.2"
 duckdb = "^1.0.0"
+streamlit = "^1.36.0"
 
 
 [build-system]
