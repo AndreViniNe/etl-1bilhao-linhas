@@ -1,6 +1,6 @@
 # ETL performance: Python vs pandas vs DuckDB vs PySpark
 
-A performance comparison of three ways to process a large text file, based on the [One Billion Row Challenge](https://github.com/gunnarmorling/1brc).
+A performance comparison of four ways to process a large text file, based on the [One Billion Row Challenge](https://github.com/gunnarmorling/1brc).
 
 The task: read a file of weather station measurements (`station;temperature`, one per line) and compute the **minimum, mean and maximum temperature per station**, sorted by station name.
 
