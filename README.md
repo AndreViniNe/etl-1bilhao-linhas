@@ -1,4 +1,4 @@
-# ETL performance: Python vs pandas vs DuckDB
+# ETL performance: Python vs pandas vs DuckDB vs PySpark
 
 A performance comparison of three ways to process a large text file, based on the [One Billion Row Challenge](https://github.com/gunnarmorling/1brc).
 
@@ -11,6 +11,7 @@ The task: read a file of weather station measurements (`station;temperature`, on
 | `etl-python.py` | Pure Python: reads the file line by line with `csv.reader` and stores the temperatures in a `defaultdict` |
 | `etl-pandas.py` | pandas: `read_csv` + `groupby().agg()` |
 | `etl-duckdb.py` | DuckDB: a single SQL query directly over the file with `read_csv` |
+| `etl-pyspark.py` | PySpark: `spark.read.csv` + `groupBy().agg()`, runnable locally or on Databricks |
 
 ## Results
 
@@ -24,13 +25,21 @@ Measured on a **10-million-row file (~152 MB)** on a 2-core machine with 7 GB of
 
 **DuckDB was about 11× faster than pure Python.**
 
+### PySpark on Databricks
+
+The same 10-million-row file, processed with `etl-pyspark.py` on **Databricks Free Edition**: **~2.4 s**.
+
+This runs on different hardware from the table above, so the two aren't a direct comparison. The point is the contrast with Spark on a small local machine, where it was the *slowest* option (~12 s on the 2-core machine): starting the JVM and scheduling tasks adds overhead that a single-machine engine like DuckDB doesn't have. On Databricks, the Spark session is already running and the work runs on managed compute, so that overhead disappears.
+
 ## Why the results differ
 
 - **Pure Python** processes one row at a time in the interpreter and keeps every value in memory, so it's the slowest and its memory use grows with the data.
 - **pandas** is vectorized, so it's much faster, but it runs on a single thread and loads the **whole file into memory**. At a billion rows, it wouldn't fit in a normal machine's RAM.
 - **DuckDB** is a columnar, vectorized, multi-threaded SQL engine that streams the file, so it uses all CPU cores and doesn't need the data to fit in memory.
 
-**Next step:** when data no longer fits on a single machine, distributed engines like **Apache Spark** spread the work across a cluster.
+- **PySpark** is a distributed engine: it splits the file into partitions, processes them in parallel and shuffles rows by station to aggregate. Its transformations are *lazy*: nothing runs until an action like `.show()`. On one small machine, that machinery is overhead; its strength is scaling out across a cluster when the data no longer fits on one machine.
+
+**Takeaway:** for data that fits on one machine, DuckDB is hard to beat. When it doesn't, Spark spreads the work across a cluster, and that's where a platform like Databricks comes in.
 
 ## Dashboard
 
@@ -52,6 +61,10 @@ poetry run python create_measurements.py
 poetry run python etl-python.py
 poetry run python etl-pandas.py
 poetry run python etl-duckdb.py
+poetry run python etl-pyspark.py   # requires pyspark and Java
+
+# On Databricks: upload measurements.txt to a Volume and pass its path:
+#   /Volumes/<catalog>/<schema>/<volume>/measurements.txt
 
 # 3. Dashboard
 poetry run python dashboard/using_duckdb_to_save_parquet.py
